@@ -1,28 +1,31 @@
-#include "/home/codeleaded/System/Static/Library/WindowEngine1.0.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <wayland-client.h>
 
-void Setup(AlxWindow* w){
-    
+static void registry_handler(void *data, struct wl_registry *registry,
+                             uint32_t id, const char *interface, uint32_t version) {
+    printf("Gefundene Schnittstelle: %s\n", interface);
 }
-void Update(AlxWindow* w){
-    if(Stroke(ALX_MOUSE_L).DOWN){
-        int index = window.MouseY * window.Width + window.MouseX;
-        if(index>=0 && index<window.Width * window.Height){
-            window.Buffer[index] = WHITE;
-        }
-        //printf("X:%d Y:%d W:%d\n",window.MouseX,window.MouseY,window.Width);
-    }
-    
-    Clear(BLACK);
-    
-    RenderCStr("Hello World",10,10,BLUE);
-}
-void Delete(AlxWindow* w){
 
-}
+static void registry_remover(void *data, struct wl_registry *registry, uint32_t id) {}
+
+static const struct wl_registry_listener registry_listener = {
+    .global = registry_handler,
+    .global_remove = registry_remover
+};
 
 int main() {
-    if(Create("Wayland Test",1000,1000,1,1,Setup,Update,Delete)){
-        Start();
+    struct wl_display *display = wl_display_connect(NULL);
+    if (!display) {
+        fprintf(stderr, "Fehler: Verbindung zu Wayland fehlgeschlagen.\n");
+        return -1;
     }
+
+    struct wl_registry *registry = wl_display_get_registry(display);
+    wl_registry_add_listener(registry, &registry_listener, NULL);
+
+    wl_display_roundtrip(display);
+
+    wl_display_disconnect(display);
     return 0;
 }
